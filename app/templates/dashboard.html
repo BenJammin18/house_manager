@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – house_manager{% endblock %}
+{% block content %}
+
+<section class="capture">
+    <h2>Just tell it</h2>
+    <form hx-post="/api/capture" hx-target="#capture-result" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        <div class="form-row">
+            <input type="text" name="text" placeholder="e.g. vet appt for Fluffy next Tuesday 3pm" required>
+            <button type="submit">Capture</button>
+        </div>
+    </form>
+    <div id="capture-result"></div>
+</section>
+
+<section class="add-item">
+    <h2>Add something (manual)</h2>
+    <form hx-post="/items" hx-target="#item-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        <div class="form-row">
+            <input type="text" name="title" placeholder="What needs doing?" required>
+            <select name="domain" required>
+                {% for d in domains %}
+                <option value="{{ d.value }}">{{ d.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <input type="text" name="item_type" placeholder="type (e.g. vet_appt, water_bill)">
+            <input type="datetime-local" name="due_at">
+            <select name="priority">
+                {% for p in priorities %}
+                <option value="{{ p.value }}" {% if p.value == "normal" %}selected{% endif %}>{{ p.value }}</option>
+                {% endfor %}
+            </select>
+            <select name="assignee_id">
+                <option value="">Unassigned</option>
+                {% for m in all_members %}
+                <option value="{{ m.id }}">{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <textarea name="description" placeholder="Notes (optional)"></textarea>
+        </div>
+        <button type="submit">Add</button>
+    </form>
+</section>
+
+<section class="calendars">
+    <h2>Google account (Calendar + Gmail)</h2>
+    <p class="hint">One link covers both — calendar sync/conflict detection and inbox triage (spam→Trash, important flagged, events extracted).</p>
+    <ul class="calendar-links">
+        {% for m in all_members %}
+        <li>
+            {{ m.name }} —
+            {% if m.id in linked_member_ids and m.id in email_linked_member_ids %}
+            <span class="linked">calendar + gmail linked</span>
+            {% elif m.id in linked_member_ids or m.id in email_linked_member_ids %}
+            <span class="linked">partially linked</span> · <a href="/oauth/google/login?member_id={{ m.id }}">Re-link to add the rest</a>
+            {% else %}
+            <a href="/oauth/google/login?member_id={{ m.id }}">Link Google account</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section class="banking">
+    <h2>Bank accounts</h2>
+    <p class="hint">Read-only via Plaid — no ability to move money.</p>
+    <ul class="calendar-links">
+        {% for a in linked_accounts %}
+        <li>{{ a.institution_name or 'Unknown institution' }} — {{ a.account_name or a.account_type }}{% if a.account_mask %} ····{{ a.account_mask }}{% endif %}</li>
+        {% endfor %}
+    </ul>
+    <div class="form-row">
+        {% for m in all_members %}
+        <a href="/plaid/link?member_id={{ m.id }}"><button type="button" class="secondary">Connect a bank for {{ m.name }}</button></a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="budgets">
+    <h2>Budgets</h2>
+    <form hx-post="/budgets" hx-target="#budgets-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        <div class="form-row">
+            <input type="text" name="name" placeholder="Category (e.g. Groceries)" required>
+            <input type="number" step="0.01" name="monthly_amount" placeholder="monthly $ amount" required>
+            <button type="submit">Add budget</button>
+        </div>
+    </form>
+    <form hx-post="/budgets/propose" hx-target="#budgets-list" hx-swap="innerHTML">
+        <button type="submit" class="secondary">Suggest budget from spending history</button>
+    </form>
+    <div id="budgets-list">
+        {% include "partials/budgets_list.html" %}
+    </div>
+</section>
+
+<section class="rules">
+    <h2>Auto-approve rules</h2>
+    <p class="hint">Actions matching an active rule execute without texting to ask first.</p>
+    <form hx-post="/rules" hx-target="#rules-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        <div class="form-row">
+            <select name="domain" required>
+                {% for d in domains %}
+                <option value="{{ d.value }}">{{ d.value }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="item_type" placeholder="item type (blank = any)">
+            <input type="number" step="0.01" name="max_amount_cents" placeholder="max $ amount">
+            <input type="text" name="vendor" placeholder="vendor/payee (optional)">
+            <button type="submit">Add rule</button>
+        </div>
+    </form>
+    <div id="rules-list">
+        {% include "partials/rules_list.html" %}
+    </div>
+</section>
+
+<section class="vendors">
+    <h2>Vendors</h2>
+    <p class="hint">Save a vendor once, then hit "Need service" any time to draft a task and text a booking confirmation request.</p>
+    <form hx-post="/vendors" hx-target="#vendors-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        <div class="form-row">
+            <input type="text" name="name" placeholder="Vendor name (e.g. Joe's HVAC)" required>
+            <input type="text" name="service_type" placeholder="service type (e.g. HVAC)">
+            <input type="text" name="phone" placeholder="phone">
+            <input type="text" name="email" placeholder="email (optional)">
+            <button type="submit">Add vendor</button>
+        </div>
+    </form>
+    <div id="vendors-list">
+        {% include "partials/vendors_list.html" %}
+    </div>
+</section>
+
+<section class="assets">
+    <h2>Home assets</h2>
+    <p class="hint">Register appliances/systems and link them to a vendor, then hit "Something broke" when they act up.</p>
+    <form hx-post="/assets" hx-target="#assets-list" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        <div class="form-row">
+            <input type="text" name="name" placeholder="Asset name (e.g. Upstairs AC unit)" required>
+            <input type="text" name="category" placeholder="category (e.g. Appliance)">
+            <input type="text" name="location" placeholder="location (e.g. Kitchen)">
+            <select name="vendor_id">
+                <option value="">No vendor</option>
+                {% for v in vendors %}
+                <option value="{{ v.id }}">{{ v.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Add asset</button>
+        </div>
+    </form>
+    <div id="assets-list">
+        {% include "partials/assets_list.html" %}
+    </div>
+</section>
+
+<section class="items">
+    <h2>What's open</h2>
+    <div id="item-list" hx-get="/items" hx-trigger="every 60s, item-captured from:body">
+        {% include "partials/item_list.html" %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,9 @@
+{% if error %}
+<p class="capture-error">Couldn't quite parse that: {{ error }}</p>
+{% elif item %}
+<p class="capture-ok">
+    Added <strong>{{ item.title }}</strong> ({{ item.domain.value }})
+    {% if item.due_at %}· due {{ item.due_at.strftime('%b %d, %I:%M %p') }}{% endif %}
+    {% if assignee %}· {{ assignee.name }}{% endif %}
+</p>
+{% endif %}

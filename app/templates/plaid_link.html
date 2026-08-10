@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Link a bank account – house_manager{% endblock %}
+{% block content %}
+
+<section>
+    <h2>Link a bank account for {{ member_name }}</h2>
+    <p class="hint">Connects via Plaid. house_manager only ever gets read-only transaction data — no ability to move money.</p>
+    <button id="plaid-link-button">Connect a bank</button>
+    <p id="plaid-status"></p>
+</section>
+
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+    const handler = Plaid.create({
+        token: {{ link_token | tojson }},
+        onSuccess: async (public_token, metadata) => {
+            document.getElementById('plaid-status').textContent = 'Linking...';
+            const response = await fetch('/plaid/exchange', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    member_id: {{ member_id }},
+                    public_token: public_token,
+                    institution_name: metadata.institution ? metadata.institution.name : '',
+                    accounts: metadata.accounts || [],
+                }),
+            });
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                document.getElementById('plaid-status').textContent = 'Something went wrong linking the account.';
+            }
+        },
+        onExit: (err) => {
+            if (err) {
+                document.getElementById('plaid-status').textContent = 'Link exited: ' + err.error_message;
+            }
+        },
+    });
+
+    document.getElementById('plaid-link-button').addEventListener('click', () => handler.open());
+</script>
+
+{% endblock %}

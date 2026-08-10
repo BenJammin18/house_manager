@@ -1,0 +1,16 @@
+{% if not categories %}
+<p class="empty">No budget categories yet.</p>
+{% endif %}
+<ul>
+    {% for category in categories %}
+    <li class="rule {{ 'rule-inactive' if not category.active }}">
+        <span>
+            <strong>{{ category.name }}</strong> · ${{ '%.2f' | format(category.monthly_amount_cents / 100) }}/mo
+            {% if category.created_by.value == 'agent' %}<span class="hint-inline">(agent-suggested{{ ', pending review' if not category.active }})</span>{% endif %}
+        </span>
+        <form hx-post="/budgets/{{ category.id }}/toggle" hx-target="closest ul" hx-swap="outerHTML">
+            <button type="submit" class="secondary">{{ 'Disable' if category.active else 'Enable' }}</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>

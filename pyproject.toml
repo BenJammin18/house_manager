@@ -1,0 +1,43 @@
+[project]
+name = "house-manager"
+version = "0.1.0"
+description = "Proactive, permission-gated household management agent"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlmodel>=0.0.22",
+    "alembic>=1.14",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.17",
+    "pydantic-settings>=2.6",
+    "python-dateutil>=2.9",
+    "anthropic>=0.68",
+    "cryptography>=43",
+    "twilio>=9",
+    "google-auth>=2.35",
+    "google-auth-oauthlib>=1.2",
+    "google-api-python-client>=2.149",
+    "apscheduler>=3.10",
+    "plaid-python>=29",
+    "certifi>=2024.2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+]
+
+[tool.pytest.ini_options]
+addopts = "-m 'not live_api'"
+markers = [
+    "live_api: hits the real Anthropic API (costs money, needs ANTHROPIC_API_KEY). Run explicitly with -m live_api.",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

@@ -1,0 +1,18 @@
+{% if not assets %}
+<p class="empty">No assets added yet.</p>
+{% endif %}
+<ul>
+    {% for asset in assets %}
+    <li class="rule">
+        <span>
+            <strong>{{ asset.name }}</strong>{% if asset.category %} · {{ asset.category }}{% endif %}
+            {% if asset.location %}· {{ asset.location }}{% endif %}
+            {% if asset.vendor_id and vendors_by_id.get(asset.vendor_id) %}· vendor: {{ vendors_by_id[asset.vendor_id].name }}{% else %}· <span class="hint-inline">no vendor set</span>{% endif %}
+        </span>
+        <form hx-post="/assets/{{ asset.id }}/report-issue" hx-target="#assets-list" hx-swap="innerHTML">
+            <input type="text" name="description" placeholder="what's wrong (optional)" class="inline-input">
+            <button type="submit" class="secondary">Something broke</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>

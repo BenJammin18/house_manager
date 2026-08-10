@@ -1,0 +1,17 @@
+{% if not rules %}
+<p class="empty">No auto-approve rules yet — everything asks first.</p>
+{% endif %}
+<ul>
+    {% for rule in rules %}
+    <li class="rule {{ 'rule-inactive' if not rule.active }}">
+        <span>
+            <strong>{{ rule.domain.value }}</strong>{% if rule.item_type %} / {{ rule.item_type }}{% endif %}
+            {% if rule.condition_json.max_amount_cents %} · under ${{ '%.2f' | format(rule.condition_json.max_amount_cents / 100) }}{% endif %}
+            {% if rule.condition_json.vendor %} · {{ rule.condition_json.vendor }}{% endif %}
+        </span>
+        <form hx-post="/rules/{{ rule.id }}/toggle" hx-target="closest ul" hx-swap="outerHTML">
+            <button type="submit" class="secondary">{{ 'Disable' if rule.active else 'Enable' }}</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>

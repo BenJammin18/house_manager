@@ -1,0 +1,45 @@
+{% if not grouped %}
+<p class="empty">Nothing open. Nice.</p>
+{% endif %}
+
+{% for domain, items in grouped.items() %}
+<div class="domain-group">
+    <h3>{{ domain }}</h3>
+    <ul>
+        {% for item in items %}
+        <li class="item priority-{{ item.priority.value }}" id="item-{{ item.id }}">
+            <div class="item-main">
+                <strong>{{ item.title }}</strong>
+                {% if item.description %}<span class="desc">{{ item.description }}</span>{% endif %}
+                <span class="meta">
+                    {% if item.due_at %}due {{ item.due_at.strftime('%b %d, %I:%M %p') }}{% endif %}
+                    {% if item.assignee_id and members.get(item.assignee_id) %}· {{ members[item.assignee_id].name }}{% endif %}
+                    · {{ item.priority.value }}
+                </span>
+            </div>
+            <div class="item-actions">
+                {% if domain == "bill" %}
+                <form hx-post="/items/{{ item.id }}/propose-payment" hx-target="#item-list" hx-swap="innerHTML">
+                    <button type="submit" class="secondary">Text to confirm paid</button>
+                </form>
+                {% elif domain in ("pet", "baby") %}
+                <form hx-post="/items/{{ item.id }}/propose-tier-c" hx-target="#item-list" hx-swap="innerHTML">
+                    <button type="submit" class="secondary">Text to confirm booked</button>
+                </form>
+                {% elif domain in ("chore", "maintenance", "prescription") %}
+                <form hx-post="/items/{{ item.id }}/propose-tier-c" hx-target="#item-list" hx-swap="innerHTML">
+                    <button type="submit" class="secondary">Text to confirm ordered</button>
+                </form>
+                {% endif %}
+                <form hx-post="/items/{{ item.id }}/complete" hx-target="#item-list" hx-swap="innerHTML">
+                    <button type="submit">Done</button>
+                </form>
+                <form hx-post="/items/{{ item.id }}/skip" hx-target="#item-list" hx-swap="innerHTML">
+                    <button type="submit" class="secondary">Skip</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}

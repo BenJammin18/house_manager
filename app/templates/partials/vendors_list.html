@@ -1,0 +1,17 @@
+{% if not vendors %}
+<p class="empty">No vendors added yet.</p>
+{% endif %}
+<ul>
+    {% for vendor in vendors %}
+    <li class="rule">
+        <span>
+            <strong>{{ vendor.name }}</strong>{% if vendor.service_type %} · {{ vendor.service_type }}{% endif %}
+            {% if vendor.phone %}· {{ vendor.phone }}{% endif %}
+        </span>
+        <form hx-post="/vendors/{{ vendor.id }}/request-service" hx-target="#vendors-list" hx-swap="innerHTML">
+            <input type="text" name="description" placeholder="what's needed (optional)" class="inline-input">
+            <button type="submit" class="secondary">Need service</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
